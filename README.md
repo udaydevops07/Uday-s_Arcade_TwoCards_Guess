@@ -1,6 +1,7 @@
 📁 Folder Structure
 
 Uday-s_Arcade_TwoCards_Guess/
+
 ├── Dockerfile
 ├── index.html
 └── nginx.conf
