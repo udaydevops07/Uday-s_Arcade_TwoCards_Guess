@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uday's Arcade</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card {
+      perspective: 1000px;
+    }
+    .card-inner {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+    }
+    .card-front {
+      transform: rotateY(180deg);
+    }
+    .card-back {
+      transform: rotateY(0deg);
+    }
+    .shake {
+      animation: shake 0.5s;
+    }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      50% { transform: translateX(10px); }
+      75% { transform: translateX(-10px); }
+      100% { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="text-center mb-6">
+    <h1 class="text-4xl font-bold text-gray-800">Uday's Arcade</h1>
+    <p class="text-lg text-gray-600 mt-2">Match all pairs to advance to the next level!</p>
+    <div class="mt-4 text-xl">
+      <span>Level: <span id="level">1</span></span> |
+      <span>Moves: <span id="moves">0</span></span> |
+      <span>Matches: <span id="matches">0</span></span>
+    </div>
+  </div>
+  <div id="game-board" class="grid gap-4 max-w-3xl w-full">
+    <!-- Cards will be dynamically added here -->
+  </div>
+  <button id="restart" class="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">Restart Game</button>
+
+  <script>
+    const gameBoard = document.getElementById('game-board');
+    const levelDisplay = document.getElementById('level');
+    const movesDisplay = document.getElementById('moves');
+    const matchesDisplay = document.getElementById('matches');
+    const restartButton = document.getElementById('restart');
+    
+    let cards = [];
+    let flippedCards = [];
+    let moves = 0;
+    let matches = 0;
+    let currentLevel = 1;
+
+    // Level configurations
+    const levels = [
+      { pairs: 4, rows: 2, cols: 4 }, // Level 1: 4 pairs (8 cards)
+      { pairs: 6, rows: 3, cols: 4 }, // Level 2: 6 pairs (12 cards)
+      { pairs: 8, rows: 4, cols: 4 }, // Level 3: 8 pairs (16 cards)
+      { pairs: 10, rows: 4, cols: 5 }, // Level 4: 10 pairs (20 cards)
+      { pairs: 12, rows: 4, cols: 6 }  // Level 5: 12 pairs (24 cards)
+    ];
+
+    // Card emojis (enough for all levels)
+    const emojis = [
+      '🍎', '🍌', '🍇', '🍓', '🍉', '🍑', '🍒', '🍍', '🥭', '🥝',
+      '🍊', '🍋', '🍈', '🍏', '🍐', '🍅', '🥥', '🥑', '🍆', '🥕',
+      '🌽', '🥒', '🥬', '🥦'
+    ];
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function createCard(emoji) {
+      const card = document.createElement('div');
+      card.className = 'card relative w-full h-24 bg-white rounded-lg shadow-md hover:shadow-lg transition';
+      card.innerHTML = `
+        <div class="card-inner w-full h-full">
+          <div class="card-back absolute inset-0 bg-blue-300 flex items-center justify-center rounded-lg text-2xl">?</div>
+          <div class="card-front absolute inset-0 bg-white flex items-center justify-center rounded-lg text-4xl">${emoji}</div>
+        </div>
+      `;
+      card.addEventListener('click', () => flipCard(card));
+      return card;
+    }
+
+    function initLevel(level) {
+      gameBoard.innerHTML = '';
+      cards = [];
+      flippedCards = [];
+      moves = 0;
+      matches = 0;
+      movesDisplay.textContent = moves;
+      matchesDisplay.textContent = matches;
+      levelDisplay.textContent = currentLevel;
+
+      const levelConfig = levels[level - 1];
+      gameBoard.style.gridTemplateColumns = `repeat(${levelConfig.cols}, minmax(0, 1fr))`;
+      gameBoard.style.gridTemplateRows = `repeat(${levelConfig.rows}, minmax(0, 1fr))`;
+
+      // Select emojis for the current level
+      const selectedEmojis = emojis.slice(0, levelConfig.pairs);
+      const cardEmojis = [...selectedEmojis, ...selectedEmojis]; // Duplicate for pairs
+      const shuffledEmojis = shuffle(cardEmojis);
+
+      shuffledEmojis.forEach(emoji => {
+        const card = createCard(emoji);
+        gameBoard.appendChild(card);
+        cards.push(card);
+      });
+    }
+
+    function flipCard(card) {
+      if (flippedCards.length < 2 && !card.classList.contains('flipped') && !flippedCards.includes(card)) {
+        card.classList.add('flipped');
+        flippedCards.push(card);
+        moves++;
+        movesDisplay.textContent = moves;
+
+        if (flippedCards.length === 2) {
+          checkMatch();
+        }
+      }
+    }
+
+    function checkMatch() {
+      const [card1, card2] = flippedCards;
+      const emoji1 = card1.querySelector('.card-front').textContent;
+      const emoji2 = card2.querySelector('.card-front').textContent;
+
+      if (emoji1 === emoji2) {
+        matches++;
+        matchesDisplay.textContent = matches;
+        flippedCards = [];
+        const levelConfig = levels[currentLevel - 1];
+        if (matches === levelConfig.pairs) {
+          setTimeout(() => {
+            if (currentLevel < levels.length) {
+              currentLevel++;
+              alert(`Congratulations! Advancing to Level ${currentLevel}!`);
+              initLevel(currentLevel);
+            } else {
+              alert('Congratulations! You completed all levels!');
+              currentLevel = 1; // Reset to Level 1
+              initLevel(currentLevel);
+            }
+          }, 500);
+        }
+      } else {
+        card1.classList.add('shake');
+        card2.classList.add('shake');
+        setTimeout(() => {
+          card1.classList.remove('flipped', 'shake');
+          card2.classList.remove('flipped', 'shake');
+          flippedCards = [];
+        }, 1000);
+      }
+    }
+
+    restartButton.addEventListener('click', () => {
+      currentLevel = 1;
+      initLevel(currentLevel);
+    });
+
+    // Start the game at Level 1
+    initLevel(currentLevel);
+  </script>
+</body>
+</html>
