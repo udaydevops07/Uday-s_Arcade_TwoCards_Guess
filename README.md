@@ -1,10 +1,5 @@
-📁 Folder Structure
+<img width="982" alt="Screenshot 2025-06-02 at 11 58 37" src="https://github.com/user-attachments/assets/a549a08b-9ca7-4ce0-8e89-09e71f734c55" />
 
-Uday-s_Arcade_TwoCards_Guess/
-
-├── Dockerfile
-├── index.html
-└── nginx.conf
 
 ✅ Step 1: Save your HTML
 Save your HTML as index.html in a folder called
